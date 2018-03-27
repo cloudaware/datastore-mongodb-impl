@@ -95,7 +95,13 @@ public final class MongoStoreService implements StoreService {
         for (final Entity entity : entities) {
             final BsonDocument upsert = MARSHALLER.convertEntity(entity);
             upsert.remove(KEY_FIELD);
-            getCollection(entity.getKey()).updateOne(new BsonDocument(KEY_FIELD, MARSHALLER.convertKey(entity.getKey())), new BsonDocument("$set", upsert), updateOptions);
+            final BsonDocument set = new BsonDocument();
+            if (upsert.keySet() != null && !upsert.keySet().isEmpty()) {
+                set.append("$set", upsert);
+                getCollection(entity.getKey()).updateOne(new BsonDocument(KEY_FIELD, MARSHALLER.convertKey(entity.getKey())), set, updateOptions);
+            } else {
+                getCollection(entity.getKey()).insertOne(new BsonDocument(KEY_FIELD, MARSHALLER.convertKey(entity.getKey())));
+            }
             out.add(get(entity.getKey()));
         }
         return out;

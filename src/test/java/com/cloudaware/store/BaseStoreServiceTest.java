@@ -45,13 +45,21 @@ public abstract class BaseStoreServiceTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void baseSetUp() throws Exception {
         backend.setUp();
+        setUp();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void baseTearDown() throws Exception {
+        tearDown();
         backend.tearDown();
+    }
+
+    protected void setUp() {
+    }
+
+    protected void tearDown() {
     }
 
     protected Key nextIdKey(final String kind) throws Exception {
