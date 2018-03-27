@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class DatastoreBackend implements Backend {
-    private static LocalDatastoreHelper localDatastoreHelper = LocalDatastoreHelper.create();
+    private static LocalDatastoreHelper localDatastoreHelper = LocalDatastoreHelper.create(1.0);
     private static Datastore datastore;
 
     public static void beforeClass() {
