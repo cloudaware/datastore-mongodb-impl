@@ -27,11 +27,14 @@ import com.cloudaware.store.model.TimestampValue;
 import com.cloudaware.store.model.Value;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.FindIterable;
+import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.BsonArray;
@@ -40,6 +43,7 @@ import org.bson.BsonBoolean;
 import org.bson.BsonDateTime;
 import org.bson.BsonDocument;
 import org.bson.BsonDouble;
+import org.bson.BsonInt32;
 import org.bson.BsonInt64;
 import org.bson.BsonNull;
 import org.bson.BsonString;
@@ -47,6 +51,7 @@ import org.bson.BsonValue;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -57,6 +62,7 @@ public final class MongoStoreService implements StoreService {
     private static final int MAX_CONNECTION_IDLE_TIME = 60000;
     private final MongoClient client;
     private final String defaultProjectId;
+    private final Map<String, Boolean> collectionHasKeyIndex = Maps.newHashMap();
 
     public MongoStoreService(final MongoClient client, final String defaultProjectId) {
         this.client = client;
@@ -64,7 +70,7 @@ public final class MongoStoreService implements StoreService {
     }
 
     public MongoStoreService(final String mongoClientUri, final String defaultProjectId) {
-        client = new MongoClient(new MongoClientURI(mongoClientUri, MongoClientOptions.builder().socketKeepAlive(true).maxConnectionIdleTime(MAX_CONNECTION_IDLE_TIME)));
+        client = new MongoClient(new MongoClientURI(mongoClientUri, MongoClientOptions.builder().socketKeepAlive(true)));
         this.defaultProjectId = defaultProjectId;
     }
 
@@ -75,6 +81,26 @@ public final class MongoStoreService implements StoreService {
     protected MongoCollection<BsonDocument> getCollection(final String projectId, final String namespace, final String kind) {
         final MongoDatabase db = getDatabase(projectId);
         final String collectionName = (namespace == null ? "" : namespace) + "__" + kind;
+        if (collectionHasKeyIndex.get(collectionName) == null || !collectionHasKeyIndex.get(collectionName)) {
+            final ListIndexesIterable<BsonDocument> indexesIterable = db.getCollection(collectionName).listIndexes(BsonDocument.class);
+            final MongoCursor<BsonDocument> mongoCursor = indexesIterable.iterator();
+            boolean hasKeyIndex = false;
+            while (mongoCursor.hasNext()) {
+                final BsonDocument index = mongoCursor.next();
+                final BsonDocument key = index.get("key").asDocument();
+                if (key.keySet() != null && key.keySet().size() == 1 && key.keySet().contains(KEY_FIELD)) {
+                    hasKeyIndex = true;
+                }
+                if (hasKeyIndex) {
+                    break;
+                }
+            }
+            if (!hasKeyIndex) {
+                db.getCollection(collectionName).createIndex(new BsonDocument(KEY_FIELD, new BsonInt32(1)));
+                hasKeyIndex = true;
+            }
+            collectionHasKeyIndex.put(collectionName, hasKeyIndex);
+        }
         return db.getCollection(collectionName, BsonDocument.class);
     }
 
