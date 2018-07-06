@@ -3,6 +3,7 @@ package com.cloudaware.store.env;
 import com.cloudaware.store.BaseStoreServiceTest;
 import com.cloudaware.store.StoreService;
 import com.cloudaware.store.datastore.DatastoreService;
+import com.google.cloud.NoCredentials;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.testing.LocalDatastoreHelper;
@@ -41,7 +42,12 @@ public class DatastoreBackend implements Backend {
     @Override
     public void setUp() throws Exception {
         localDatastoreHelper.reset();
-        this.datastore = DatastoreOptions.newBuilder().setProjectId(BaseStoreServiceTest.DEFAULT_PROJECT_ID).setHost(localDatastoreHelper.getOptions().getHost()).build().getService();
+        this.datastore = DatastoreOptions
+                .newBuilder()
+                .setProjectId(BaseStoreServiceTest.DEFAULT_PROJECT_ID)
+                .setHost(localDatastoreHelper.getOptions().getHost())
+                .setCredentials(NoCredentials.getInstance())
+                .build().getService();
     }
 
     @Override
