@@ -36,10 +36,17 @@
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-datastore</artifactId>
-            <version>1.8.0</version>
+            <version>1.48.0</version>
             <scope>provided</scope>
         </dependency>
 
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>LATEST</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
